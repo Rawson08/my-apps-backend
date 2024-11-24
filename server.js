@@ -7,7 +7,7 @@ const cors = require('cors');
 const jwt = require("jsonwebtoken");
 
 const corsOptions = {
-    origin: ['https://roshansubedi.me'], // Frontend URL
+    origin: ['https://roshansubedi.me', 'http://127.0.0.1:5500/'], // Frontend URL
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'], // Customize headers if needed
     credentials: true, // Allow cookies if required
