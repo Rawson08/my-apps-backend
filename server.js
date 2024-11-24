@@ -6,6 +6,14 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require("jsonwebtoken");
 
+const corsOptions = {
+    origin: ['https://roshansubedi.me'], // Frontend URL
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'], // Customize headers if needed
+    credentials: true, // Allow cookies if required
+};
+
+
 const app = express();
 const PORT = 5000;
 
@@ -13,7 +21,7 @@ const PORT = 5000;
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // Routes
