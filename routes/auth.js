@@ -148,7 +148,7 @@ router.post("/login", async (req, res) => {
 router.get("/user-info", async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
+      return res.status(401).json({ message: "Token not provided or invalid" });
     }
   
     try {
@@ -159,9 +159,16 @@ router.get("/user-info", async (req, res) => {
         return res.status(404).json({ message: "User not found" });
       }
   
-      res.status(200).json({ userId: user._id, username: user.username }); // Include username
+      res.status(200).json({ userId: user._id, username: user.username, firstname: user.firstname }); // Include username
     } catch (error) {
-      res.status(401).json({ message: "Invalid token" });
+        if (error.name === "TokenExpiredError") {
+            return res.status(401).json({ message: "Token expired" });
+          } else if (error.name === "JsonWebTokenError") {
+            return res.status(401).json({ message: "Invalid token" });
+          } else {
+            console.error("Unexpected error:", error);
+            res.status(500).json({ message: "Internal server error" });
+          }
     }
   });
 
