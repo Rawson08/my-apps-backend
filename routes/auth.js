@@ -297,7 +297,19 @@ router.get("/user-info", async (req, res) => {
       if (!user) return res.status(404).json({ message: "User not found." });
   
       user.email = newEmail;
+      user.isVerified = false;
+      user.verificationExpires = new Date(Date.now() + 15*60*1000);
+      user.verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       await user.save();
+
+      const emailData = {
+        from: `${EMAILNAME} <noreply@${DOMAIN}>`,
+        to: email,
+        subject: "Verify your email | Roshan's AppHub",
+        text: `Hi ${firstname},\n\nYour verification code is: ${verificationCode}\n\nIt will expire in 15 minutes. Please request a new code if it expires.\n\nThank you!`,
+      }
+    await mg.messages().send(emailData);
+
   
       res.status(200).json({ message: "Email updated successfully." });
     } catch (error) {
