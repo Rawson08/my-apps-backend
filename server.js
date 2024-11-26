@@ -28,7 +28,7 @@ app.use(express.json());
 app.use('/auth', authRoutes);
 
 app.use((req, res, next) => {
-    res.status(404).json({ message: "Route not found" });
+    res.status(404).json({ message: "Route not found in serverJS" });
 });
 
 // Start server
