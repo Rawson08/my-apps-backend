@@ -302,7 +302,7 @@ router.get("/user-info", async (req, res) => {
       user.verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       const emailData = {
         from: `${EMAILNAME} <noreply@${DOMAIN}>`,
-        to: email,
+        to: user.email,
         subject: "Verify your email | Roshan's AppHub",
         text: `Hi ${firstname},\n\nYour verification code is: ${verificationCode}\n\nIt will expire in 15 minutes. Please request a new code if it expires.\n\nThank you!`,
       }
