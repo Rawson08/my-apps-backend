@@ -304,7 +304,7 @@ router.get("/user-info", async (req, res) => {
         from: `${EMAILNAME} <noreply@${DOMAIN}>`,
         to: user.email,
         subject: "Verify your email | Roshan's AppHub",
-        text: `Hi ${firstname},\n\nYour verification code is: ${verificationCode}\n\nIt will expire in 15 minutes. Please request a new code if it expires.\n\nThank you!`,
+        text: `Hi ${user.firstname},\n\nYour verification code is: ${user.verificationCode}\n\nIt will expire in 15 minutes. Please request a new code if it expires.\n\nThank you!`,
       }
         await mg.messages().send(emailData);
       await user.save();
