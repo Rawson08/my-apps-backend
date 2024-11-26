@@ -324,5 +324,34 @@ router.get("/user-info", async (req, res) => {
     }
   });
   
+  router.post("/update-profile", async (req, res) => {
+    const { firstname, lastname } = req.body;
+    const token = req.headers.authorization?.split(" ")[1];
+  
+    if (!firstname || !lastname) {
+      return res.status(400).json({ message: "First name and last name are required." });
+    }
+  
+    try {
+      const decoded = jwt.verify(token, SECRET_KEY);
+      const userId = decoded.id;
+  
+      // Find and update the user
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found." });
+      }
+  
+      user.firstname = firstname;
+      user.lastname = lastname;
+      await user.save();
+  
+      res.status(200).json({ message: "Profile updated successfully." });
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(400).json({ message: "Invalid or expired token." });
+    }
+  });
+  
 
 module.exports = router;
