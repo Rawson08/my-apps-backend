@@ -143,7 +143,7 @@ router.post("/login", async (req, res) => {
         const token = jwt.sign({ id: user._id }, SECRET_KEY, { expiresIn: "1h" });
         res.status(200).json({ message: "Login successful", token });
     } catch (error) {
-        res.status(500).json({ message: "Error logging in", error });
+        res.status(500).json({ message: "Error logging in. Please try again.", error });
     }
 });
 
@@ -260,6 +260,67 @@ router.get("/user-info", async (req, res) => {
     } catch (error) {
       console.error("Error resetting password:", error);
       res.status(400).json({ message: "Invalid or expired token." });
+    }
+  });
+  
+  router.post("/update-password", async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const token = req.headers.authorization?.split(" ")[1];
+  
+    try {
+      const decoded = jwt.verify(token, SECRET_KEY);
+      const user = await User.findById(decoded.id);
+  
+      if (!user) return res.status(404).json({ message: "User not found." });
+  
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) return res.status(400).json({ message: "Current password is incorrect." });
+  
+      user.password = await bcrypt.hash(newPassword, 10);
+      await user.save();
+  
+      res.status(200).json({ message: "Password updated successfully." });
+    } catch (error) {
+      console.error("Error updating password:", error);
+      res.status(500).json({ message: "Error updating password." });
+    }
+  });
+
+  router.post("/update-email", async (req, res) => {
+    const { newEmail } = req.body;
+    const token = req.headers.authorization?.split(" ")[1];
+  
+    try {
+      const decoded = jwt.verify(token, SECRET_KEY);
+      const user = await User.findById(decoded.id);
+  
+      if (!user) return res.status(404).json({ message: "User not found." });
+  
+      user.email = newEmail;
+      await user.save();
+  
+      res.status(200).json({ message: "Email updated successfully." });
+    } catch (error) {
+      console.error("Error updating email:", error);
+      res.status(500).json({ message: "Error updating email." });
+    }
+  });
+  
+  router.delete("/delete-account", async (req, res) => {
+    const token = req.headers.authorization?.split(" ")[1];
+  
+    try {
+      const decoded = jwt.verify(token, SECRET_KEY);
+      const user = await User.findById(decoded.id);
+  
+      if (!user) return res.status(404).json({ message: "User not found." });
+  
+      await User.deleteOne({ _id: decoded.id }); // Delete user from database
+  
+      res.status(200).json({ message: "Account deleted successfully." });
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      res.status(500).json({ message: "Error deleting account." });
     }
   });
   
