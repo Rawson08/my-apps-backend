@@ -5,6 +5,7 @@ const User = require('../models/User');
 const mailgun = require("mailgun-js");
 const DOMAIN = "mg.roshansubedi.me";
 const mg = mailgun({ apiKey: process.env.MAILGUN_API_KEY, domain:DOMAIN });
+const EMAILNAME = "Roshan's AppHub";
 
 const router = express.Router();
 const SECRET_KEY = process.env.SECRET_KEY;
@@ -32,12 +33,13 @@ router.post("/signup", async (req, res) => {
             verificationExpires: new Date(Date.now() + 15*60*1000),  //Expires in 15 mins
           });
 
-        await mg.messages().send({
-          from: `noreply@${DOMAIN}`,
-          to: email,
-          subject: "Verify your email | Roshan's AppHub",
-          text: `Hi ${firstname},\n\nYour verification code is: ${verificationCode}\n\nIt will expire in 15 minutes.\n\nThank you!`,
-        })
+          const emailData = {
+            from: `${EMAILNAME} <noreply@${DOMAIN}>`,
+            to: email,
+            subject: "Verify your email | Roshan's AppHub",
+            text: `Hi ${firstname},\n\nYour verification code is: ${verificationCode}\n\nIt will expire in 15 minutes. Please request a new code if it expires.\n\nThank you!`,
+          }
+        await mg.messages().send(emailData);
 
         await newUser.save();
         res.status(201).json({ message: "Signup successful! Please verify your email.", redirect: "email-verify.html" });
@@ -103,7 +105,7 @@ router.post("/resend-code", async (req, res) => {
 
         // Send the new code via email
         await mg.messages().send({
-            from: `noreply@${DOMAIN}`,
+            from: `Roshan's AppHub <noreply@${DOMAIN}>`,
             to: email,
             subject: "Your New Verification Code | Roshan's AppHub",
             text: `Hi,\n\nYour new verification code is: ${verificationCode}\n\nIt will expire in 15 minutes.\n\nThank you!`,
@@ -183,7 +185,7 @@ router.get("/user-info", async (req, res) => {
         const user = await User.findOne({ email });
 
         const emailData = {
-            from: `Roshan's AppHub <noreply@${DOMAIN}>`, to: email, subject: `Your requested username for Roshan's AppHun Login`,
+            from: `${EMAILNAME} <noreply@${DOMAIN}>`, to: email, subject: `Your requested username for Roshan's AppHun Login`,
             text: `Hello ${user.firstname},\n\nYou made a request for your username. It is ${user.username}\n\nIf you did not make this request, we suggest to secure your account by changing your password or email address.\n\nThank you!`,
         };
 
@@ -195,5 +197,71 @@ router.get("/user-info", async (req, res) => {
         res.status(500).json({ message: "An error occured. Please try again later." });
     }
   });
+
+  router.post("/reset-password-request", async (req, res) => {
+    const { username, email } = req.body;
+
+    if(!username || !email) {
+        return res.status(400).json({ message: "Please enter both field." });
+    }
+
+    try {
+        const user = await User.findOne({ username, email });
+        if(!user) {
+            return res.status(404).json({ message: "User not found with the provided information." });
+        }
+
+        const token = jwt.sign({ id: user._id }, SECRET_KEY, { expiresIn: "15m" });
+
+        const resetLink = `https://roshansubedi.me/my-apps/reset-password-confirm.html?token=${token}`;
+
+        const emailData = {
+            from: `${EMAILNAME} <noreply@${DOMAIN}>`, to: user.email,
+            subject: "Reset your Password",
+            html:`
+            <p>Hi ${user.firstname},</p>
+        <p>You requested to reset your password. Click the link below to reset your password:</p>
+        <a href="${resetLink}">Reset Password</a>
+        <p>This link will expire in 15 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+        `,
+        };
+
+        await mg.messages().send(emailData);
+        res.status(200).json({ message: "Password reset link sent successfully." });
+    } catch (error) {
+        console.error("Error processing reset password request:", error);
+        res.status(500).json({ message: "Error processing request." });
+    }
+  });
+
+  router.post("/reset-password-confirm", async (req, res) => {
+    const { token, newPassword } = req.body;
+  
+    try {
+      // Verify the token
+      const decoded = jwt.verify(token, SECRET_KEY);
+      const userId = decoded.id;
+  
+      // Find the user
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({ message: "Invalid token or user does not exist." });
+      }
+  
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+  
+      // Update the user's password
+      user.password = hashedPassword;
+      await user.save();
+  
+      res.status(200).json({ message: "Password reset successfully." });
+    } catch (error) {
+      console.error("Error resetting password:", error);
+      res.status(400).json({ message: "Invalid or expired token." });
+    }
+  });
+  
 
 module.exports = router;
