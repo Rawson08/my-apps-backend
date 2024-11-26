@@ -172,4 +172,28 @@ router.get("/user-info", async (req, res) => {
     }
   });
 
+  router.post("/reset-username", async (req, res) => {
+    const { email } = req.body;
+
+    if(!email){
+        return res.status(400).json({ message: "Email is required." });
+    }
+
+    try {
+        const user = await User.findOne({ email });
+
+        const emailData = {
+            from: `Roshan's AppHub <noreply@${DOMAIN}>`, to: email, subject: `Your requested username for Roshan's AppHun Login`,
+            text: `Hello ${user.firstname},\n\nYou made a request for your username. It is ${user.username}\n\nIf you did not make this request, we suggest to secure your account by changing your password or email address.\n\nThank you!`,
+        };
+
+        await mg.messages().send(emailData);
+
+        res.status(200).json({ message: `If there is an account associated with ${email}, the username has been sent to that address. Please check your email app.` });
+    } catch (error) {
+        console.error("Error during reset username:", error);
+        res.status(500).json({ message: "An error occured. Please try again later." });
+    }
+  });
+
 module.exports = router;
