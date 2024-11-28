@@ -11,4 +11,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Testing
-        run: echo "Hello, world!"
+        run: echo "Hello, worldtest!"
