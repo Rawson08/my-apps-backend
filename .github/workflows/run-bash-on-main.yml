@@ -1,0 +1,17 @@
+name: Run Bash on Master Changes
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  run-bash-script:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Run Bash Script
+        run: echo 'Success!'
