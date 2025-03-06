@@ -4,7 +4,9 @@
   "description": "Backend to handle signup/login and other user account setting stuffs deployed through heroku",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js",
+    "build": "npm install"
   },
   "keywords": [],
   "author": "",
