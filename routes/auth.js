@@ -12,42 +12,53 @@ const SECRET_KEY = process.env.SECRET_KEY;
 
 // Sign up route
 router.post("/signup", async (req, res) => {
-    const { username, email, firstname, lastname, password } = req.body;
-    try {
-        // Check if user already exists
-        const existingUser = await User.findOne({ username });
-        const existingEmail = await User.findOne({ email })
-        if (existingEmail) {
-          return res.status(400).json({ message: "Email already used! Please reset password."} );
-        }
-        if (existingUser) {
-            return res.status(400).json({ message: "Username taken. Please try another username." });
-        }
+  const { username, email, firstname, lastname, password } = req.body;
 
-        // Hash the password
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+  try {
+      // 🔹 Check if username or email already exists
+      const existingUser = await User.findOne({ where: { username } });
+      const existingEmail = await User.findOne({ where: { email } });
 
-        const newUser = new User({ username, email, firstname, lastname,
-           password: hashedPassword, isVerified:false, verificationCode,
-            verificationExpires: new Date(Date.now() + 15*60*1000),  //Expires in 15 mins
-          });
+      if (existingEmail) {
+          return res.status(400).json({ message: "Email already used! Please reset password." });
+      }
+      if (existingUser) {
+          return res.status(400).json({ message: "Username taken. Please try another username." });
+      }
 
-          const emailData = {
-            from: `${EMAILNAME} <noreply@${DOMAIN}>`,
-            to: email,
-            subject: "Verify your email | Roshan's AppHub",
-            text: `Hi ${firstname},\n\nYour verification code is: ${verificationCode}\n\nIt will expire in 15 minutes. Please request a new code if it expires.\n\nThank you!`,
-          }
-        await mg.messages().send(emailData);
+      // 🔹 Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-        await newUser.save();
-        res.status(201).json({ message: "Signup successful! Please verify your email.", redirect: "email-verify.html" });
-    } catch (error) {
-        console.error("Error during signup:", error);
-        res.status(500).json({ message: "Error registering user", error });
-    }
+      // 🔹 Create new user in PostgreSQL
+      const newUser = await User.create({
+          username,
+          email,
+          firstname,
+          lastname,
+          password: hashedPassword,
+          isVerified: false,
+          verificationCode,
+          verificationExpires: new Date(Date.now() + 15 * 60 * 1000), // Expires in 15 mins
+      });
+
+      // 🔹 Send verification email
+      const emailData = {
+          from: `${EMAILNAME} <noreply@${DOMAIN}>`,
+          to: email,
+          subject: "Verify your email | Roshan's AppHub",
+          text: `Hi ${firstname},\n\nYour verification code is: ${verificationCode}\n\nIt will expire in 15 minutes. Please request a new code if it expires.\n\nThank you!`,
+      };
+      await mg.messages().send(emailData);
+
+      res.status(201).json({ message: "Signup successful! Please verify your email.", redirect: "email-verify.html" });
+
+  } catch (error) {
+      console.error("Error during signup:", error);
+      res.status(500).json({ message: "Error registering user", error });
+  }
 });
+
 
 router.post("/verify-email", async (req, res) => {
   const { email, code } = req.body;
@@ -185,7 +196,7 @@ router.get("/user-info", async (req, res) => {
         const user = await User.findOne({ email });
 
         const emailData = {
-            from: `${EMAILNAME} <noreply@${DOMAIN}>`, to: email, subject: `Your requested username for Roshan's AppHun Login`,
+            from: `${EMAILNAME} <noreply@${DOMAIN}>`, to: email, subject: `Your requested username for Roshan's AppHub Login`,
             text: `Hello ${user.firstname},\n\nYou made a request for your username. It is ${user.username}\n\nIf you did not make this request, we suggest to secure your account by changing your password or email address.\n\nThank you!`,
         };
 
