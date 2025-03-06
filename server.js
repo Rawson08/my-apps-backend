@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
-const connectDB = require('./config/db');
+// const connectDB = require('./config/db');
 const authRoutes = require('./routes/auth');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require("jsonwebtoken");
+const sequelize = require('./config/db');
+const User = require('./models/User');
 
 const corsOptions = {
     origin: ['https://roshansubedi.me', 'http://127.0.0.1:5500/'], // Frontend URL
@@ -13,12 +15,11 @@ const corsOptions = {
     credentials: true, // Allow cookies if required
 };
 
-
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to MongoDB
-connectDB();
+// // Connect to MongoDB
+// connectDB();
 
 // Middleware
 app.use(cors(corsOptions));
@@ -32,4 +33,7 @@ app.use((req, res, next) => {
 });
 
 // Start server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+sequelize.sync({ force: false}).then( () => {
+    console.log('Database synced');
+    app.listen(PORT, () => console.log('Server running on port ${PORT}'));
+}).catch(err => console.error('Error syncing database:', err));
